@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { getAutomaticTypeDirectiveNames } from 'typescript'
 import {ref, onBeforeUnmount} from 'vue'
+import { uploadVideo } from '@/api/upload'
 
 const uploading = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
@@ -34,12 +34,18 @@ function onChange(e:Event) {
   file.value = f
   videoUrl.value = URL.createObjectURL(f)
   activeName.value = 'b'
+
+  // uploadVideo(f)
 }
 
 function reset() {
   if (videoUrl.value) URL.revokeObjectURL(videoUrl.value)
   file.value = null
   videoUrl.value = ''
+}
+
+function onupload(){
+  if (videoUrl.value) uploadVideo(file.value)
 }
 
 function handleTab(tab:{name: string, label: string}){
@@ -84,8 +90,11 @@ function handleTab(tab:{name: string, label: string}){
           <div class="video-frame">
             <video :src="videoUrl" controls playsinline preload="metadata"></video>
           </div>
-          <!-- <p>已选择:{{ file.name}}</p> -->
-          <button class="reselect" @click="reset">Reselect</button>
+          <div class="localBtn">
+            <!-- <p>已选择:{{ file.name}}</p> -->
+            <button class="reselect" @click="reset">Reselect</button>
+            <button class="upload" @click="onupload">Upload</button>
+          </div>
         </div>
     </div>
     <input ref="inputRef" type="file" accept="video/*" hidden @change="onChange"/>
@@ -241,7 +250,6 @@ function handleTab(tab:{name: string, label: string}){
   background: #FDF4FF; /* 极浅粉紫背景 */
   border-radius: 12px;
   display: flex;
-  cursor: pointer;
   text-align: center;
   align-items: center;
   justify-content:center;
@@ -255,9 +263,14 @@ function handleTab(tab:{name: string, label: string}){
   font-family: 'Acme';
 }
 
-.reselect {
-  display: block;        /* 变成块级 */
-  margin: 12px auto 0;   /* 上下留白，左右自动 → 居中 */
+.localBtn {
+  display:flex;
+}
+
+.localBtn button {
+  position: relative;    /* ← 加这一行 */
+  overflow: hidden;      /* 可选，避免伪元素溢出圆角 */
+  flex:1 1 0;     
   color: #ffffff;
   cursor: pointer;
   width:180px;
@@ -265,7 +278,7 @@ function handleTab(tab:{name: string, label: string}){
   border: 0;   /* 关键：给边框留位 */
   border-radius: 12px;
   background:linear-gradient(135deg,  #EC4899, #3B82F6);
-  font-size: 32px;
+  font-size: 40px;
   font-family: 'Advent Pro';
   font-weight: 600;
   font-style: italic;
@@ -273,7 +286,7 @@ function handleTab(tab:{name: string, label: string}){
               box-shadow 0.35s ease, transform 0.35s ease;
 }
 
-.reselect:hover {
+.localBtn button:hover {
   background:
   linear-gradient(#fff, #fff) padding-box,      /* 内层：实色填充 */
   linear-gradient(135deg, #EC4899, #3B82F6) border-box;      /* 外层：渐变边框 */
@@ -282,7 +295,7 @@ function handleTab(tab:{name: string, label: string}){
   transform: translateY(-2px);
 }
 
-.reselect::after {
+.localBtn button::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -299,8 +312,20 @@ function handleTab(tab:{name: string, label: string}){
   pointer-events: none;
 }
 
-.reselect:hover::after {
+.localBtn button:hover::after {
   opacity: 1;
+}
+
+
+.localBtn .upload {
+  background:linear-gradient(135deg, #3B82F6,  #EC4899);
+}
+
+.localBtn .upload:hover {
+  background:
+  linear-gradient(#fff, #fff) padding-box,      /* 内层：实色填充 */
+  linear-gradient(135deg, #3B82F6, #EC4899) border-box;      /* 外层：渐变边框 */
+  color: #3B82F6;
 }
 
 .player {
