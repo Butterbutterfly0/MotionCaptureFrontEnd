@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import {ref, onBeforeUnmount} from 'vue'
-import { uploadVideo } from '@/api/upload'
+import { uploadVideo,uploading, waitForTask, resultUrl } from '@/api/upload'
 
-const uploading = ref(false)
+
 const inputRef = ref<HTMLInputElement | null>(null)
 const file = ref<File | null>(null)
 const videoUrl = ref('')
 const activeName = ref('a')
+
+const processing =ref(false)
+const taskId = ref('')
+const progress = ref(0)
+const resultVideoUrl = ref('')
+
 
 type Tab = 'Upload'|'LocalVideo'|'Processed'|'Animated';
 
@@ -19,7 +25,6 @@ const tabs = [
 ]
 
 function pick() {
-  if(uploading.value) return
   inputRef.value?.click()
 }
 
@@ -42,10 +47,27 @@ function reset() {
   if (videoUrl.value) URL.revokeObjectURL(videoUrl.value)
   file.value = null
   videoUrl.value = ''
+  resultVideoUrl.value = ''
 }
 
-function onupload(){
-  if (videoUrl.value) uploadVideo(file.value)
+async function onupload(){
+  if (!videoUrl.value) return
+  processing.value = true
+  try {
+     taskId.value = await uploadVideo(file.value)
+     await waitForTask(taskId.value,(p)=>(progress.value = p))
+     resultVideoUrl.value = resultUrl(taskId.value)
+     activeName.value = 'c'
+
+  } catch(e) {
+
+  }
+  finally {
+    processing.value = false
+  }
+ 
+
+
 }
 
 function handleTab(tab:{name: string, label: string}){
@@ -78,13 +100,11 @@ function handleTab(tab:{name: string, label: string}){
         <p>Click to select File,Or drop video here</p>
         
     </div>
-    <div
-      v-if="activeName ==='b'"
+    <div v-if="activeName ==='b'"
       class = "player">
         <div v-if="!file"
           class="nofile">
           <p>You need upload video to continue</p>
-
         </div>
         <div v-else>
           <div class="video-frame">
@@ -96,7 +116,22 @@ function handleTab(tab:{name: string, label: string}){
             <button class="upload" @click="onupload">Upload</button>
           </div>
         </div>
+        <div v-if="uploading" class="progress">
+          <div class="progress-bar" :style="{ width: progress + '%' }">
+        </div>
+      </div>
     </div>
+    <div v-if="activeName === 'c'">
+      <div v-if="!resultVideoUrl" class="nofile">
+        <p>No processed video yet</p>
+      </div>
+      <div v-else>
+        <div class="video-frame">
+          <video :src="resultVideoUrl" controls playsinline preload="metadata"></video>
+        </div>
+      </div>
+    </div>
+
     <input ref="inputRef" type="file" accept="video/*" hidden @change="onChange"/>
   </div>
 </template>
@@ -358,6 +393,23 @@ function handleTab(tab:{name: string, label: string}){
   border-radius: 25px;                 /* 内圆角 = 外圆角 - padding */
   margin:2px;
   background: #000;                    /* 视频未加载时的底色 */
+}
+
+.progress {
+  margin: 12px auto 0;
+  width: 60%;
+  height: 10px;
+  background: #EDE9FE;              /* 浅紫底 */
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(135deg, #EC4899, #3B82F6);
+  border-radius: 999px;
+  transition: width 0.25s ease;
 }
 
 </style>
