@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onBeforeUnmount} from 'vue'
-import { uploadVideo,uploading, waitForTask, resultUrl } from '@/api/upload'
+import { uploadVideo,uploading, waitForTask, resultUrl,waitForAnimeTask,animeresultUrl } from '@/api/upload'
 
 
 const inputRef = ref<HTMLInputElement | null>(null)
@@ -13,6 +13,8 @@ const taskId = ref('')
 const progress = ref(0)
 const resultVideoUrl = ref('')
 
+const animeProgress = ref(0)
+const animeResultVideoUrl = ref('')
 
 type Tab = 'Upload'|'LocalVideo'|'Processed'|'Animated';
 
@@ -58,7 +60,9 @@ async function onupload(){
      await waitForTask(taskId.value,(p)=>(progress.value = p))
      resultVideoUrl.value = resultUrl(taskId.value)
      activeName.value = 'c'
-
+    await waitForAnimeTask(taskId.value,(p)=>(animeProgress.value = p))
+    animeResultVideoUrl.value = animeresultUrl(taskId.value)
+    alert('Anime Could be available')
   } catch(e) {
 
   }
@@ -128,6 +132,16 @@ function handleTab(tab:{name: string, label: string}){
       <div v-else>
         <div class="video-frame">
           <video :src="resultVideoUrl" controls playsinline preload="metadata"></video>
+        </div>
+      </div>
+    </div>
+    <div v-if="activeName === 'd'">
+      <div v-if="!animeResultVideoUrl" class="nofile">
+        <p>No processed video yet</p>
+      </div>
+      <div v-else>
+        <div class="video-frame">
+          <video :src="animeResultVideoUrl" controls playsinline preload="metadata"></video>
         </div>
       </div>
     </div>

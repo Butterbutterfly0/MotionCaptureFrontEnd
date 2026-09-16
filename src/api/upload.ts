@@ -1,6 +1,6 @@
 import {ref} from 'vue'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = ''
 export const uploading = ref(false)
 const uploadError = ref('')
 const taskId = ref('')
@@ -49,10 +49,27 @@ export async function waitForTask(
         const res = await fetch(`${API_BASE}/api/task/${taskId}`)
         const data = await res.json()
 
-        onProgress ?.(data.progressv ?? 0)
+        onProgress ?.(data.progress ?? 0)
         if (data.status === 'done') return
         if (data.status === 'failed') throw new Error(data.error || '处理失败')
         
         await new Promise((r) => setTimeout(r,1000))
     }
+}
+
+export function animeresultUrl(taskId: string):string {
+    return ` ${API_BASE}/api/anime_result/${taskId}`
+}
+
+export async function waitForAnimeTask( taskId:string, 
+    onProgress?: (p:number)=>void):Promise<void> {
+        while(true) {
+            const res = await fetch(`${API_BASE}/api/anime_task/${taskId}`)
+            const data = await res.json()
+            onProgress?.(data.progress ?? 0)
+            if (data.status === 'done') return
+            if (data.status === 'failed') throw new Error(data.error || '处理失败')
+        
+            await new Promise((r) => setTimeout(r,1000))
+        }
 }
